@@ -73,7 +73,7 @@ function recaptcha_captcha($op, $captcha_type = '') {
 
   switch ($op) {
     case 'list':
-      return array('reCAPTCHA');
+      return array('reCAPTCHA', 'Invisible');
 
     case 'generate':
       $captcha = array();
@@ -107,6 +107,8 @@ function recaptcha_captcha($op, $captcha_type = '') {
             'data-type' => variable_get('recaptcha_type', 'image'),
             'data-size' => variable_get('recaptcha_size', ''),
             'data-tabindex' => variable_get('recaptcha_tabindex', 0),
+            'data-callback' => 'recaptchaValiCallback',
+            'data-expired-callback' => 'recaptchaExpiredCallback',
           );
           // Filter out empty tabindex/size.
           $attributes = array_filter($attributes);
@@ -128,6 +130,59 @@ function recaptcha_captcha($op, $captcha_type = '') {
             ),
           );
           drupal_add_html_head($data, 'recaptcha_api');
+        }
+        else {
+          // Fallback to Math captcha as reCAPTCHA is not configured.
+          $captcha = captcha_captcha('generate', 'Math');
+        }
+      }
+      elseif ($captcha_type == 'Invisible') {
+        $recaptcha_site_key = variable_get('invisible_recaptcha_site_key', '');
+        $recaptcha_secret_key = variable_get('invisible_recaptcha_secret_key', '');
+
+        if (!empty($recaptcha_site_key) && !empty($recaptcha_secret_key)) {
+          // Build the reCAPTCHA captcha form if site_key and secret_key are
+          // configured. Captcha requires TRUE to be returned in solution.
+          $captcha['solution'] = TRUE;
+          $captcha['captcha_validate'] = 'recaptcha_invisible_captcha_validation';
+          $captcha['form']['captcha_response'] = array(
+            '#type' => 'hidden',
+            '#value' => 'Google no captcha',
+          );
+
+          $noscript = '';
+          if (variable_get('recaptcha_noscript', 0)) {
+            $variables = array(
+              'sitekey' => $recaptcha_site_key,
+              'language' => $language->language,
+            );
+            $noscript = theme('recaptcha_widget_noscript', array('widget' => $variables));
+          }
+
+          $attributes = array(
+            'class' => 'g-recaptcha',
+            'data-sitekey' => $recaptcha_site_key,
+            'data-theme' => variable_get('recaptcha_theme', 'light'),
+            'data-type' => variable_get('recaptcha_type', 'image'),
+            'data-size' => 'invisible',
+            'data-tabindex' => variable_get('recaptcha_tabindex', 0),
+            'data-callback' => 'recaptchaValiCallback',
+          );
+          // Filter out empty tabindex/size.
+          $attributes = array_filter($attributes);
+
+          $captcha['form']['recaptcha_widget'] = array(
+            '#markup' => '<div' . drupal_attributes($attributes) . '></div>',
+            '#suffix' => $noscript,
+          );
+
+          drupal_add_js(
+            drupal_get_path('module', 'recaptcha') . '/js/recaptcha-customize.js',
+            array(
+              'type' => 'file',
+              'scope' => 'footer',
+            )
+          );
         }
         else {
           // Fallback to Math captcha as reCAPTCHA is not configured.
@@ -180,6 +235,47 @@ function recaptcha_captcha_validation($solution, $response, $element, $form_stat
 }
 
 /**
+ * CAPTCHA Callback; Validates the reCAPTCHA code.
+ */
+function recaptcha_invisible_captcha_validation($solution, $response, $element, $form_state) {
+  $recaptcha_secret_key = variable_get('invisible_recaptcha_secret_key', '');
+  if (empty($_POST['g-recaptcha-response']) || empty($recaptcha_secret_key)) {
+    return FALSE;
+  }
+
+  // Use drupal_http_request() to circumvent all issues with the Google library.
+  $recaptcha = new \ReCaptcha\ReCaptcha($recaptcha_secret_key, new \ReCaptcha\RequestMethod\Drupal7Post());
+
+  $resp = $recaptcha->verify(
+    $_POST['g-recaptcha-response'],
+    ip_address()
+  );
+
+  if ($resp->isSuccess()) {
+    // Verified!
+    return TRUE;
+  }
+  else {
+    // Error code reference, https://developers.google.com/recaptcha/docs/verify
+    $error_codes = array(
+      'missing-input-secret' => t('The secret parameter is missing.'),
+      'invalid-input-secret' => t('The secret parameter is invalid or malformed.'),
+      'missing-input-response' => t('The response parameter is missing.'),
+      'invalid-input-response' => t('The response parameter is invalid or malformed.'),
+      'invalid-json' => t('The json response is invalid or malformed.'),
+      'unknown' => t('Unknown error.'),
+    );
+    foreach ($resp->getErrorCodes() as $code) {
+      if (!isset($error_codes[$code])) {
+        $code = 'unknown';
+      }
+      watchdog('reCAPTCHA web service', '@error', array('@error' => $error_codes[$code]), WATCHDOG_ERROR);
+    }
+  }
+  return FALSE;
+}
+
+/**
  * Process variables for recaptcha-widget-noscript.tpl.php.
  *
  * @see recaptcha-widget-noscript.tpl.php
@@ -188,4 +284,15 @@ function template_preprocess_recaptcha_widget_noscript(&$variables) {
   $variables['sitekey']  = check_plain($variables['widget']['sitekey']);
   $variables['language'] = check_plain($variables['widget']['language']);
   $variables['url']      = check_url(url('https://www.google.com/recaptcha/api/fallback', array('query' => array('k' => $variables['widget']['sitekey'], 'hl' => $variables['widget']['language']), 'absolute' => TRUE)));
+}
+
+
+function recaptcha_variable_group_info() {
+  $groups['recaptcha'] = array(
+    'title' => 'recaptcha',
+    'access' => 'access administration pages',
+    'path' => array('admin/config'),
+  );
+  
+  return $groups;
 }

@@ -34,6 +34,56 @@ CONFIGURATION
    want the reCAPTCHA form to be presented:
        admin/config/people/captcha
 
+	   
+News
+-------------
+
+ - Add invisible reCAPTCHA feature.
+ 
+ - In this module, invisible reCAPTCHA will support multiple form in one page, but V2 version will still just support one form.
+ 
+ - You can directly use this feature in your form.
+ 
+ - Also you can re-write below two function in your code.
+ 
+ - Below is example:
+ // This function is used before execute invisible reCAPTCHA.
+ recaptchaFrontEndVali = function($form) {
+    switch ($form.prop('id')) {
+      case 'form-xxx':
+        if ($('#email').val() === '') {
+          console.log('email empty.');
+          return false;
+        } else {
+          return true;
+        }
+        break;
+      case 'form-yyy':
+        if ($('#first-name').val() === '') {
+          console.log('first name empty.');
+          return false;
+        } else {
+          return true;
+        }
+        break;
+      default:
+        return true;
+    }
+  };
+ 
+ // This function is used after execute invisible reCAPTCHA before form submission.
+ recaptchaBeforeSubmit = function($form) {
+    switch ($form.prop('id')) {
+      case 'form-xxx':
+        alert('form-xxx will submit!');
+        break;
+      case 'form-yyy':
+        alert('form-yyy will submit');
+        break;
+    }
+  };
+
+  
 KNOWN ISSUES
 ------------
 

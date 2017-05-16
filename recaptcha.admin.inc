@@ -13,7 +13,14 @@ function recaptcha_admin_settings() {
     '#type' => 'fieldset',
     '#title' => t('General settings'),
   );
-  $form['recaptcha_general_settings']['recaptcha_site_key'] = array(
+    
+  $form['recaptcha_general_settings']['general'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('General reCaptcha settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $form['recaptcha_general_settings']['general']['recaptcha_site_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Site key'),
     '#default_value' => variable_get('recaptcha_site_key', ''),
@@ -21,7 +28,7 @@ function recaptcha_admin_settings() {
     '#description' => t('The site key given to you when you <a href="@url">register for reCAPTCHA</a>.', array('@url' => 'http://www.google.com/recaptcha/admin')),
     '#required' => TRUE,
   );
-  $form['recaptcha_general_settings']['recaptcha_secret_key'] = array(
+  $form['recaptcha_general_settings']['general']['recaptcha_secret_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Secret key'),
     '#default_value' => variable_get('recaptcha_secret_key', ''),
@@ -30,6 +37,29 @@ function recaptcha_admin_settings() {
     '#required' => TRUE,
   );
 
+  $form['recaptcha_general_settings']['invisible'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Invisible reCaptcha settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $form['recaptcha_general_settings']['invisible']['invisible_recaptcha_site_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Site key'),
+    '#default_value' => variable_get('invisible_recaptcha_site_key', ''),
+    '#maxlength' => 40,
+    '#description' => t('The site key given to you when you <a href="@url">register for reCAPTCHA</a>.', array('@url' => 'http://www.google.com/recaptcha/admin')),
+    '#required' => TRUE,
+  );
+  $form['recaptcha_general_settings']['invisible']['invisible_recaptcha_secret_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Secret key'),
+    '#default_value' => variable_get('invisible_recaptcha_secret_key', ''),
+    '#maxlength' => 40,
+    '#description' => t('The secret key given to you when you <a href="@url">register for reCAPTCHA</a>.', array('@url' => 'http://www.google.com/recaptcha/admin')),
+    '#required' => TRUE,
+  );
+  
   $form['recaptcha_widget_settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('Widget settings'),
@@ -62,6 +92,7 @@ function recaptcha_admin_settings() {
     '#options' => array(
       '' => t('Normal (default)'),
       'compact' => t('Compact'),
+      'invisible' => 'Invisible',
     ),
     '#title' => t('Size'),
     '#type' => 'select',
