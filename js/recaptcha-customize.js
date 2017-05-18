@@ -48,7 +48,9 @@ var recaptchaBeforeSubmit = function($from) {};
   (function (d, s, id) {
     var js,
         fjs = d.getElementsByTagName(s)[0],
-        lang = $('html').prop('lang');
+        lang = $('html').attr('xml:lang');
+        lang = lang ? lang : $('html').prop('lang');
+      // drupal_add_js('https://apis.google.com/js/api:client.js', array('type' => 'external', 'weight' => 60));
     if (d.getElementById(id)) {
       return;
     }
