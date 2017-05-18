@@ -1,6 +1,7 @@
 /**
  * @author Yan Dong (2017/05/15)
  * @requires  jQuery v1.8.3 or later
+ * @file recaptcha customize js file
  * Can re-write below two function:
  *  - recaptchaFrontEndVali
  *  - recaptchaBeforeSubmit
@@ -66,9 +67,9 @@ var recaptchaBeforeSubmit = function($from) {};
    * Please put here the function before form submit.
    */
   RecaptchaCustomize.submitForm = function() {
-    var $thisForm = $('.clicked-submit');
-    recaptchaBeforeSubmit($thisForm);
-    $thisForm.submit();
+    var $this_form = $('.clicked-submit');
+    recaptchaBeforeSubmit($this_form);
+    $this_form.submit();
   };
 
   /**
@@ -76,13 +77,13 @@ var recaptchaBeforeSubmit = function($from) {};
    */
   RecaptchaCustomize.exeCaptcha = function() {
     $('form').on('click', '.form-submit', function(e) {
-      var $thisForm = $(this).parents('form');
-      if ($thisForm.find('.g-recaptcha[data-size="invisible"]').length > 0) {
+      var $this_form = $(this).parents('form');
+      if ($this_form.find('.g-recaptcha[data-size="invisible"]').length > 0) {
         e.preventDefault();
         $('form').removeClass('clicked-submit');
-        $thisForm.addClass('clicked-submit');
-        var widgetId = $thisForm.data('recaptcha-id');
-        if (recaptchaFrontEndVali($thisForm)) {
+        $this_form.addClass('clicked-submit');
+        var widgetId = $this_form.data('recaptcha-id');
+        if (recaptchaFrontEndVali($this_form)) {
           if (grecaptcha.getResponse(widgetId)) {
             RecaptchaCustomize.submitForm();
           } else {
